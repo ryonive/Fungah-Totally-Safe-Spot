@@ -9,6 +9,7 @@ using Dalamud.Game.ClientState.Objects;
 using Dalamud.Plugin.Services;
 using Dalamud.Interface.Utility;
 using Fungah;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 
 namespace SamplePlugin
 {
@@ -43,7 +44,7 @@ namespace SamplePlugin
         {
             _clientState = clientState;
             _gameGui = gameGui;
-            _objectTable = objectTable;;
+            _objectTable = objectTable;
         }
 
 
@@ -86,8 +87,9 @@ namespace SamplePlugin
         /// <returns></returns>
         private bool PlayerAtSafeSpot()
         {   //shouldn't be null if this is called...
-            return _clientState.LocalPlayer != null &&
-                Vector3.DistanceSquared(_clientState.LocalPlayer.Position, _safeSpot) < 0.00025; //distance from safe spot
+            var player = GetLocalPlayer();
+            return player != null &&
+                Vector3.DistanceSquared(player.Position, _safeSpot) < 0.00025; //distance from safe spot
         }
 
         /// <summary>
@@ -96,8 +98,9 @@ namespace SamplePlugin
         /// <returns></returns>
         private bool PlayerNearSafeSpot()
         {
-            return _clientState.LocalPlayer != null &&
-                   Vector3.DistanceSquared(_clientState.LocalPlayer.Position, _safeSpot) < 0.05; //distance from safe spot
+            var player = GetLocalPlayer();
+            return player != null &&
+                   Vector3.DistanceSquared(player.Position, _safeSpot) < 0.05; //distance from safe spot
         }
 
         /// <summary>
@@ -125,8 +128,9 @@ namespace SamplePlugin
         /// <returns></returns>
         private bool PlayerOnStage()
         {
-            if (_clientState.LocalPlayer == null || !PlayerAtGoldSaucer() || !IsFungahEvent()) return false;            
-            var pos = _clientState.LocalPlayer.Position;
+            var player = GetLocalPlayer();
+            if (player == null || !PlayerAtGoldSaucer() || !IsFungahEvent()) return false;            
+            var pos = player.Position;
             // south and north are negative values.
             return ((pos.X is > StageWest and < StageEast) && (pos.Z is < StageSouth and > StageNorth));
         }
@@ -138,7 +142,7 @@ namespace SamplePlugin
         private bool IsFungahEvent()
         {
 #if DEBUG
-            PluginLog.Debug($"npc: {_objectTable.Any(o => o.DataId == FungahNpcId)}");
+            PluginLog.Debug($"npc: {_objectTable.Any(o => o.BaseId == FungahNpcId)}");
             return true;
 #else
             return _objectTable.Any(o => o.DataId == FungahNpcId);
@@ -151,7 +155,7 @@ namespace SamplePlugin
         private void DrawCalibrationArrow()
         {
             if (PlayerAtSafeSpot() || !PlayerNearSafeSpot()) return;
-            var pos = _clientState.LocalPlayer!.Position;
+            var pos = GetLocalPlayer()!.Position;
             // gud enuf
 
             ImGui.SetCursorPosY(24f);            
@@ -168,6 +172,8 @@ namespace SamplePlugin
             ImGui.PopStyleColor();
             
         }
+
+        private IPlayerCharacter? GetLocalPlayer() => _objectTable.LocalPlayer;
     }
 }
 
